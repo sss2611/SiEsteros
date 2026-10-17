@@ -1,0 +1,47 @@
+[
+  {
+    "id": "pr01",
+    "title": "Personas atrapadas por crecida",
+    "text": "Ante personas atrapadas por inundación no ingresar a pie en agua en movimiento. Priorizar embarcación de rescate con chalecos salvavidas. Confirmar cantidad de personas, ubicar el punto más alto del inmueble y mantener comunicación por radio. Indicar subir a planta alta o techo y no intentar cruzar el agua."
+  },
+  {
+    "id": "pr02",
+    "title": "Adultos mayores y movilidad reducida",
+    "text": "En geriátricos y centros de adultos mayores con movilidad reducida priorizar traslado asistido con camilla o silla. Verificar medicación crónica, oxígeno y equipos eléctricos. Evacuar por tandas por riesgo de caída y acompañar con personal sanitario y ambulancia."
+  },
+  {
+    "id": "pr03",
+    "title": "Falta de agua potable",
+    "text": "Sin agua potable tras la inundación enviar camión cisterna y bidones. Indicar hervir o potabilizar el agua y no consumir agua de red afectada. Priorizar niños, embarazadas y enfermos por riesgo de diarrea y enfermedades hídricas."
+  },
+  {
+    "id": "pr04",
+    "title": "Estructura en riesgo de colapso",
+    "text": "Ante una estructura dañada o en riesgo de colapso acordonar el perímetro, cortar gas y electricidad y no permitir el reingreso. Solicitar evaluación de ingeniería civil. Si es un servicio crítico, hospital o centro de salud, planificar el traslado de pacientes."
+  },
+  {
+    "id": "pr05",
+    "title": "Heridos y clasificación (triage)",
+    "text": "Con heridos aplicar triage por colores, enviar ambulancia con personal sanitario, controlar hemorragias y prevenir hipotermia. Derivar al hospital más cercano con acceso transitable y avisar al puesto de comando."
+  },
+  {
+    "id": "pr06",
+    "title": "Zona aislada sin acceso",
+    "text": "En zona aislada por anegamiento sin acceso vehicular usar bote de rescate o vehículo alto. Evaluar ruta alternativa e informar las rutas cortadas al puesto de comando. Mantener contacto por radio hasta la llegada de los recursos."
+  },
+  {
+    "id": "pr07",
+    "title": "Escuelas y niños",
+    "text": "En escuelas con niños y menores priorizar el resguardo en planta alta, controlar el listado de alumnos y contactar a las familias. No entregar menores a terceros sin autorización. Derivar a un refugio cercano cuando sea seguro."
+  },
+  {
+    "id": "pr08",
+    "title": "Servicio crítico, energía y bombeo",
+    "text": "Si un servicio crítico queda inundado o sin energía enviar grupo electrógeno para equipos médicos y bomba de achique. Riesgo eléctrico en agua: cortar el suministro antes de ingresar. Proteger planta de agua potable y oxígeno medicinal."
+  },
+  {
+    "id": "pr09",
+    "title": "Incendio durante la inundación",
+    "text": "Ante un incendio en zona inundada enviar camión de bomberos, cortar suministro eléctrico y gas y no aplicar agua sobre instalaciones energizadas. Considerar el acceso limitado y el riesgo de cortocircuito."
+  }
+]

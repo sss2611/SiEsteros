@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* Paletas: pisan los colores base de Tailwind según el tema elegido */
+
+/* Sobria: negro neutro, grises y un único acento apagado (estilo Aqua Viva) */
+html[data-theme="sobria"] {
+  --color-slate-950: #0a0a0b;
+  --color-slate-900: #111113;
+  --color-slate-800: #1a1b1e;
+  --color-slate-700: #27282c;
+  --color-slate-600: #3b3d42;
+  --color-slate-500: #5c5f66;
+  --color-slate-400: #8b8e95;
+  --color-slate-300: #b4b7bd;
+  --color-slate-200: #d9dbdf;
+  --color-cyan-300: #b6c8d4;
+  --color-cyan-400: #8fa9bb;
+  --color-cyan-500: #7f9bb0;
+  --color-emerald-600: #2f7d5b;
+  --color-emerald-700: #256349;
+}
+
+html[data-theme="aurora"] {
+  --color-slate-950: #0b0620;
+  --color-slate-900: #130b33;
+  --color-slate-800: #21144d;
+  --color-slate-700: #33206e;
+  --color-slate-600: #4d3a91;
+  --color-slate-500: #7060b5;
+  --color-slate-400: #a99bdb;
+  --color-slate-300: #cfc6f0;
+  --color-slate-200: #e6e0f8;
+  --color-cyan-300: #c4b5fd;
+  --color-cyan-400: #a78bfa;
+}
+
+html[data-theme="semaforo"] {
+  --color-slate-950: #050505;
+  --color-slate-900: #121212;
+  --color-slate-800: #232323;
+  --color-slate-700: #353535;
+  --color-slate-600: #4d4d4d;
+  --color-slate-500: #707070;
+  --color-slate-400: #a0a0a0;
+  --color-slate-300: #cccccc;
+  --color-slate-200: #e6e6e6;
+  --color-cyan-300: #e5e5e5;
+  --color-cyan-400: #ffffff;
+}
+
+html[data-theme="hibrida"] {
+  --color-slate-950: #040a14;
+  --color-slate-900: #0a1424;
+  --color-slate-800: #132238;
+  --color-slate-700: #21344f;
+  --color-slate-600: #3a4f6b;
+}

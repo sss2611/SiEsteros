@@ -1,0 +1,23 @@
+[
+  { "id": "p01", "name": "Hospital Independencia", "kind": "hospital", "lat": -27.7789, "lng": -64.2710, "vulnerables": 150, "inundable": false, "servicioCritico": true, "vecesAfectado": 0 },
+  { "id": "p02", "name": "Hospital Regional Dr. Ramón Carrillo", "kind": "hospital", "lat": -27.8051, "lng": -64.2509, "vulnerables": 200, "inundable": false, "servicioCritico": true, "vecesAfectado": 0 },
+  { "id": "p03", "name": "Hospital Mama Antula", "kind": "hospital", "lat": -27.8427, "lng": -64.2647, "vulnerables": 90, "inundable": false, "servicioCritico": true, "vecesAfectado": 0 },
+  { "id": "p04", "name": "UPA N° 2 Barrio Cáceres", "kind": "centro_salud", "lat": -27.7906, "lng": -64.2452, "vulnerables": 40, "inundable": true, "servicioCritico": true, "vecesAfectado": 1 },
+  { "id": "p05", "name": "Escuela N° 28 Domingo F. Sarmiento", "kind": "escuela", "lat": -27.7930, "lng": -64.2531, "vulnerables": 220, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p06", "name": "Escuela N° 764 Diego de Rojas", "kind": "escuela", "lat": -27.7989, "lng": -64.2479, "vulnerables": 180, "inundable": false, "servicioCritico": false, "vecesAfectado": 1 },
+  { "id": "p07", "name": "Escuela N° 33 Nuestra Señora de las Mercedes", "kind": "escuela", "lat": -27.8097, "lng": -64.2674, "vulnerables": 250, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p08", "name": "Colegio Nuestra Señora de la Misericordia", "kind": "escuela", "lat": -27.7928, "lng": -64.2695, "vulnerables": 300, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p09", "name": "Escuela Primaria Eva Perón", "kind": "escuela", "lat": -27.7971, "lng": -64.2781, "vulnerables": 200, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p10", "name": "Geriátrico Mi Nuevo Hogar", "kind": "geriatrico", "lat": -27.8112, "lng": -64.2716, "vulnerables": 30, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p11", "name": "Geriátrico Hogar Vida", "kind": "geriatrico", "lat": -27.8161, "lng": -64.2339, "vulnerables": 25, "inundable": true, "servicioCritico": false, "vecesAfectado": 2 },
+  { "id": "p12", "name": "Centro Integral del Adulto Mayor San Antonio", "kind": "geriatrico", "lat": -27.8027, "lng": -64.2544, "vulnerables": 60, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p13", "name": "Refugio Estadio Único Madre de Ciudades", "kind": "refugio", "lat": -27.7660, "lng": -64.2710, "vulnerables": 0, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p14", "name": "Refugio Estadio Alfredo Terrera", "kind": "refugio", "lat": -27.7938, "lng": -64.2643, "vulnerables": 0, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p15", "name": "Refugio Liceo y Escuela de Policía Lorenzo Lugones", "kind": "refugio", "lat": -27.8071, "lng": -64.2598, "vulnerables": 0, "inundable": false, "servicioCritico": false, "vecesAfectado": 0 },
+  { "id": "p16", "name": "Refugio Polideportivo Provincial (Parque Aguirre)", "kind": "refugio", "lat": -27.7858, "lng": -64.2435, "vulnerables": 0, "inundable": true, "servicioCritico": false, "vecesAfectado": 2 },
+  { "id": "p17", "name": "Barrio La Católica", "kind": "zona_inundable", "lat": -27.7964, "lng": -64.2380, "vulnerables": 120, "inundable": true, "servicioCritico": false, "vecesAfectado": 4 },
+  { "id": "p18", "name": "Barrio Reconquista", "kind": "zona_inundable", "lat": -27.8074, "lng": -64.2333, "vulnerables": 90, "inundable": true, "servicioCritico": false, "vecesAfectado": 3 },
+  { "id": "p19", "name": "Barrio Telefónicos", "kind": "zona_inundable", "lat": -27.8103, "lng": -64.2236, "vulnerables": 70, "inundable": true, "servicioCritico": false, "vecesAfectado": 3 },
+  { "id": "p20", "name": "Costanera del Río Dulce", "kind": "zona_inundable", "lat": -27.7824, "lng": -64.2429, "vulnerables": 50, "inundable": true, "servicioCritico": false, "vecesAfectado": 3 },
+  { "id": "p21", "name": "Planta Potabilizadora El Polear (La Banda)", "kind": "planta_agua", "lat": -27.7648, "lng": -64.1824, "vulnerables": 0, "inundable": true, "servicioCritico": true, "vecesAfectado": 1 }
+]

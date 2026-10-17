@@ -1,0 +1,18 @@
+[
+  { "id": "r01", "type": "ambulancia", "agency": "salud", "status": "disponible", "lat": -27.7789, "lng": -64.2710, "base": "Hospital Independencia" },
+  { "id": "r02", "type": "ambulancia", "agency": "salud", "status": "disponible", "lat": -27.8051, "lng": -64.2509, "base": "Hospital Regional" },
+  { "id": "r03", "type": "ambulancia", "agency": "salud", "status": "disponible", "lat": -27.8427, "lng": -64.2647, "base": "Hospital Mama Antula" },
+  { "id": "r04", "type": "camion_bomberos", "agency": "bomberos", "status": "disponible", "lat": -27.7950, "lng": -64.2600, "base": "Cuartel Central" },
+  { "id": "r05", "type": "camion_bomberos", "agency": "bomberos", "status": "disponible", "lat": -27.8100, "lng": -64.2650, "base": "Destacamento Sur" },
+  { "id": "r06", "type": "camion_bomberos", "agency": "bomberos", "status": "asignado", "lat": -27.7850, "lng": -64.2580, "base": "Destacamento Norte" },
+  { "id": "r07", "type": "bote_rescate", "agency": "bomberos", "status": "disponible", "lat": -27.7870, "lng": -64.2450, "base": "Costanera" },
+  { "id": "r08", "type": "bote_rescate", "agency": "defensa_civil", "status": "disponible", "lat": -27.7990, "lng": -64.2440, "base": "Base ribereña" },
+  { "id": "r09", "type": "camioneta_policia", "agency": "policia", "status": "disponible", "lat": -27.7920, "lng": -64.2620, "base": "Comisaría Central" },
+  { "id": "r10", "type": "camioneta_policia", "agency": "policia", "status": "disponible", "lat": -27.8020, "lng": -64.2690, "base": "Comisaría Sur" },
+  { "id": "r11", "type": "camioneta_policia", "agency": "policia", "status": "en_camino", "lat": -27.7800, "lng": -64.2650, "base": "Comisaría Norte" },
+  { "id": "r12", "type": "camion_cisterna", "agency": "defensa_civil", "status": "disponible", "lat": -27.7960, "lng": -64.2570, "base": "Depósito Defensa Civil" },
+  { "id": "r13", "type": "grupo_electrogeno", "agency": "defensa_civil", "status": "disponible", "lat": -27.7970, "lng": -64.2600, "base": "Depósito Defensa Civil" },
+  { "id": "r14", "type": "grupo_electrogeno", "agency": "municipio", "status": "disponible", "lat": -27.8000, "lng": -64.2620, "base": "Corralón Municipal" },
+  { "id": "r15", "type": "bomba_achique", "agency": "municipio", "status": "disponible", "lat": -27.7940, "lng": -64.2640, "base": "Corralón Municipal" },
+  { "id": "r16", "type": "camioneta_ayuda", "agency": "ong", "status": "disponible", "lat": -27.8010, "lng": -64.2580, "base": "Centro de acopio ONG" }
+]

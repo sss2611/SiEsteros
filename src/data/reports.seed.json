@@ -1,0 +1,12 @@
+[
+  { "id": "rp01", "nodeId": "n01", "placeId": "p17", "lat": -27.7964, "lng": -64.2380, "type": "atrapados", "people": 6, "vulnerable": true, "access": false, "confidence": "alta", "receivedMinutesAgo": 42, "status": "nuevo" },
+  { "id": "rp02", "nodeId": "n02", "placeId": "p17", "lat": -27.7964, "lng": -64.2380, "type": "sin_agua", "people": 20, "vulnerable": true, "access": false, "confidence": "media", "receivedMinutesAgo": 30, "status": "nuevo" },
+  { "id": "rp03", "nodeId": "n03", "placeId": "p11", "lat": -27.8161, "lng": -64.2339, "type": "atrapados", "people": 25, "vulnerable": true, "access": false, "confidence": "alta", "receivedMinutesAgo": 18, "status": "nuevo" },
+  { "id": "rp04", "nodeId": "n02", "placeId": "p21", "lat": -27.7648, "lng": -64.1824, "type": "estructura", "people": 3, "vulnerable": false, "access": true, "confidence": "media", "receivedMinutesAgo": 55, "status": "en_cola" },
+  { "id": "rp05", "nodeId": "n04", "placeId": "p04", "lat": -27.7906, "lng": -64.2452, "type": "estructura", "people": 12, "vulnerable": true, "access": true, "confidence": "alta", "receivedMinutesAgo": 10, "status": "nuevo" },
+  { "id": "rp06", "nodeId": "n01", "placeId": "p18", "lat": -27.8074, "lng": -64.2333, "type": "heridos", "people": 2, "vulnerable": false, "access": false, "confidence": "baja", "receivedMinutesAgo": 8, "status": "nuevo" },
+  { "id": "rp07", "nodeId": "n05", "placeId": "p19", "lat": -27.8103, "lng": -64.2236, "type": "atrapados", "people": null, "vulnerable": null, "access": null, "confidence": "baja", "receivedMinutesAgo": 5, "status": "nuevo" },
+  { "id": "rp08", "nodeId": "n03", "placeId": "p16", "lat": -27.7858, "lng": -64.2435, "type": "estructura", "people": 80, "vulnerable": true, "access": true, "confidence": "media", "receivedMinutesAgo": 25, "status": "nuevo" },
+  { "id": "rp09", "nodeId": "n04", "placeId": "p05", "lat": -27.7930, "lng": -64.2531, "type": "ok", "people": 220, "vulnerable": false, "access": true, "confidence": "alta", "receivedMinutesAgo": 60, "status": "nuevo" },
+  { "id": "rp10", "nodeId": "n05", "placeId": null, "lat": -27.7990, "lng": -64.2400, "type": "ruta_cortada", "people": 0, "vulnerable": false, "access": false, "confidence": "alta", "receivedMinutesAgo": 15, "status": "nuevo" }
+]
