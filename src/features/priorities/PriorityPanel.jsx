@@ -2,10 +2,22 @@
 import PriorityCard from './PriorityCard.jsx';
 import { getLevel, LEVEL_INFO } from '../../shared/constants.js';
 
-export default function PriorityPanel({ reports, places, newIds, nowMs, selectedId, onSelect, onStatus }) {
+export default function PriorityPanel({
+  reports,
+  places,
+  newIds,
+  nowMs,
+  selectedId,
+  onSelect,
+  onStatus,
+  onAssign,
+  onPreAssign,
+}) {
   // Conteos por nivel para el resumen
   const counts = { critica: 0, alta: 0, media: 0, baja: 0 };
-  reports.forEach((r) => { counts[getLevel(r.score)] += 1; });
+  reports.forEach((r) => {
+    counts[getLevel(r.score)] += 1;
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -17,7 +29,10 @@ export default function PriorityPanel({ reports, places, newIds, nowMs, selected
         {/* Resumen por nivel */}
         <div className="grid grid-cols-4 gap-1">
           {['critica', 'alta', 'media', 'baja'].map((l) => (
-            <div key={l} className={`rounded-md border px-1.5 py-1 text-center ${LEVEL_INFO[l].bgCls} ${LEVEL_INFO[l].borderCls}`}>
+            <div
+              key={l}
+              className={`rounded-md border px-1.5 py-1 text-center ${LEVEL_INFO[l].bgCls} ${LEVEL_INFO[l].borderCls}`}
+            >
               <p className={`font-mono text-lg font-bold leading-none ${LEVEL_INFO[l].textCls}`}>
                 {counts[l]}
               </p>
@@ -46,6 +61,8 @@ export default function PriorityPanel({ reports, places, newIds, nowMs, selected
             selected={r.id === selectedId}
             onSelect={onSelect}
             onStatus={onStatus}
+            onAssign={onAssign}
+            onPreAssign={onPreAssign}
           />
         ))}
       </ul>

@@ -1,7 +1,7 @@
 // src/shared/state/reducer.js
 // Estado de la app. La UI NO calcula scores: los reportes ya los traen calculados.
 
-export const CLOSED_STATUSES = ['atendido', 'descartado'];
+export const CLOSED_STATUSES = ['asignado', 'atendido', 'descartado'];
 
 export function createInitialState({ reports, resources }) {
   const now = Date.now();
@@ -26,7 +26,22 @@ export function reducer(state, action) {
       const { id, status } = action;
       return {
         ...state,
-        reports: state.reports.map((r) => r.id === id ? { ...r, status } : r),
+        reports: state.reports.map((r) => (r.id === id ? { ...r, status } : r)),
+      };
+    }
+
+    case 'ASSIGN_REPORT': {
+      const { reportId, resourceId } = action;
+      return {
+        ...state,
+        reports: state.reports.map((r) =>
+          r.id === reportId ? { ...r, status: 'asignado' } : r,
+        ),
+        resources: resourceId
+          ? state.resources.map((res) =>
+              res.id === resourceId ? { ...res, status: 'en_camino' } : res,
+            )
+          : state.resources,
       };
     }
 

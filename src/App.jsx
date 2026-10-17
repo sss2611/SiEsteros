@@ -7,7 +7,7 @@ import { createSimulator }                  from './dataSource/simulator.js';
 import { reducer, createInitialState, CLOSED_STATUSES } from './shared/state/reducer.js';
 import { useAudio }                         from './shared/useAudio.js';
 import { getLevel }                         from './shared/constants.js';
-import CityMap                              from './features/map/CityMap.jsx';
+import TacticalMap                          from './features/map/TacticalMap.jsx';
 import PriorityPanel                        from './features/priorities/PriorityPanel.jsx';
 import ResourcePanel                        from './features/resources/ResourcePanel.jsx';
 import CriticalBanner                       from './features/alert/CriticalBanner.jsx';
@@ -25,13 +25,13 @@ export default function App() {
   const [selectedId, setSelectedId]       = useState(null);
   const [newIds, setNewIds]               = useState(new Set());
   const [activeTab, setActiveTab]         = useState('map'); // solo para móvil
-  const [tick, setTick]                   = useState(0);     // fuerza re-render cada 1 s
+  const [nowMs, setNowMs]                 = useState(() => Date.now());
   const { unlock, beep }                  = useAudio();
   const seenCritical                      = useRef(new Set());
 
   // Reloj de 1 segundo para actualizar tiempos de espera
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    const id = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -80,14 +80,58 @@ export default function App() {
     setNewIds(new Set());
   };
 
+  // Búsqueda lógica de recurso disponible según el tipo de reporte
+  const findMatchingResource = useCallback((reportType) => {
+    const typeMap = {
+      // Fuego y rescate estructural -> Bomberos primero
+      incendio:     ['bomberos', 'defensa_civil'],
+      atrapados:    ['bomberos', 'defensa_civil', 'ambulancia'],
+      estructura:   ['bomberos', 'defensa_civil'],
+      // Emergencias médicas -> Ambulancia primero
+      heridos:      ['ambulancia', 'bomberos', 'defensa_civil'],
+      // Logística, evacuación y civil -> Defensa Civil primero
+      sin_agua:     ['defensa_civil', 'bomberos'],
+      ruta_cortada: ['policia', 'defensa_civil'],
+      ok:           ['defensa_civil', 'policia'],
+    };
+
+    const preferred = typeMap[reportType] || [];
+
+    // 1. Primer recurso preferido disponible
+    for (const t of preferred) {
+      const match = state.resources.find((r) => r.type === t && r.status === 'disponible');
+      if (match) return match;
+    }
+
+    // 2. Si no hay del preferido, primer recurso disponible general
+    return state.resources.find((r) => r.status === 'disponible') || null;
+  }, [state.resources]);
+
+  // Disparo instantáneo de recurso a 'en_camino' al hacer clic en ASIGNAR
+  const handlePreAssign = useCallback((reportType) => {
+    const matched = findMatchingResource(reportType);
+    if (matched) {
+      dispatch({ type: 'SET_RESOURCE_STATUS', id: matched.id, status: 'en_camino' });
+    }
+  }, [findMatchingResource]);
+
+  // Completar asignación del reporte (cerrándolo y descontando activos)
+  const handleAssign = useCallback((reportId, reportType) => {
+    const matched = findMatchingResource(reportType);
+    dispatch({
+      type: 'ASSIGN_REPORT',
+      reportId,
+      resourceId: matched?.id ?? null,
+    });
+    if (reportId === selectedId) setSelectedId(null);
+  }, [findMatchingResource, selectedId]);
+
   const handleStatus = useCallback((id, status) => {
     dispatch({ type: 'SET_REPORT_STATUS', id, status });
     if (id === selectedId) setSelectedId(null);
   }, [selectedId]);
 
   /* ── Datos derivados ─────────────────────────────────────────── */
-
-  const nowMs = Date.now(); // fresco en cada render (el tick fuerza re-render)
 
   // Reportes abiertos, ordenados por score descendente
   const openReports = [...state.reports]
@@ -188,7 +232,7 @@ export default function App() {
         <section
           className={`relative flex-1 overflow-hidden ${activeTab !== 'map' ? 'hidden lg:block' : ''}`}
         >
-          <CityMap
+          <TacticalMap
             reports={openReports}
             places={PLACES}
             selectedId={selectedId}
@@ -210,6 +254,8 @@ export default function App() {
             selectedId={selectedId}
             onSelect={setSelectedId}
             onStatus={handleStatus}
+            onAssign={handleAssign}
+            onPreAssign={handlePreAssign}
           />
         </aside>
 
