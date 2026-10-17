@@ -1,7 +1,7 @@
 // src/shared/state/reducer.js
 // Estado de la app. La UI NO calcula scores: los reportes ya los traen calculados.
 
-export const CLOSED_STATUSES = ['asignado', 'atendido', 'descartado'];
+export const CLOSED_STATUSES = ['atendido', 'descartado']; // 'asignado' se mueve a 'EN CURSO'
 
 export function createInitialState({ reports, resources }) {
   const now = Date.now();
@@ -13,7 +13,7 @@ export function createInitialState({ reports, resources }) {
         ? now - receivedMinutesAgo * 60000
         : (receivedAt ?? now),
     })),
-    resources,
+    resources: resources.map((res) => ({ ...res, destination: null })),
   };
 }
 
@@ -30,18 +30,31 @@ export function reducer(state, action) {
       };
     }
 
-    case 'ASSIGN_REPORT': {
-      const { reportId, resourceId } = action;
+    // Despacho de recurso: cambia reporte a 'asignado' y recurso específico a 'en_camino' con destino
+    case 'DISPATCH_RESOURCE': {
+      const { reportId, resourceId, destination } = action;
       return {
         ...state,
         reports: state.reports.map((r) =>
           r.id === reportId ? { ...r, status: 'asignado' } : r,
         ),
-        resources: resourceId
-          ? state.resources.map((res) =>
-              res.id === resourceId ? { ...res, status: 'en_camino' } : res,
-            )
-          : state.resources,
+        resources: state.resources.map((res) =>
+          res.id === resourceId ? { ...res, status: 'en_camino', destination } : res,
+        ),
+      };
+    }
+
+    // Cierre de intervención: reporte a 'atendido', recurso liberado a 'disponible' en su base
+    case 'RESOLVE_DISPATCH': {
+      const { reportId, resourceId } = action;
+      return {
+        ...state,
+        reports: state.reports.map((r) =>
+          r.id === reportId ? { ...r, status: 'atendido' } : r,
+        ),
+        resources: state.resources.map((res) =>
+          res.id === resourceId ? { ...res, status: 'disponible', destination: null } : res,
+        ),
       };
     }
 

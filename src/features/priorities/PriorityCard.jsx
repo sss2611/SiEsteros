@@ -1,16 +1,20 @@
 // src/features/priorities/PriorityCard.jsx
-import { useState } from 'react';
-import { TYPE_INFO, LEVEL_INFO, WHY_LABELS, getLevel } from '../../shared/constants.js';
+import { useEffect, useRef, useState } from 'react';
+import { TYPE_INFO, LEVEL_INFO, WHY_LABELS, RESOURCE_INFO, getLevel } from '../../shared/constants.js';
+import { findBestMatchingResource, computeAdjustedScore } from '../../shared/helpers.js';
 
 const fmt = (v) => (v == null ? '—' : v);
 const yesNo = (v) => (v === true ? 'Sí' : v === false ? 'No' : '—');
 
 export default function PriorityCard({
   report: r,
+  allReports = [],
   places,
+  resources,
   nowMs,
   isNew,
   selected,
+  weights,
   onSelect,
   onStatus,
   onAssign,
@@ -19,36 +23,51 @@ export default function PriorityCard({
   const [expanded, setExpanded] = useState(false);
   const [animPhase, setAnimPhase] = useState(null); // 'flash-assign' | 'slide-out' | 'flash-atendido' | 'flash-descartado'
 
-  const level = getLevel(r.score);
+  const timersRef = useRef([]);
+
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(clearTimeout);
+    };
+  }, []);
+
+  // Score recalculado según sliders de ponderación
+  const score = weights ? computeAdjustedScore(r, weights) : r.score;
+  const level = getLevel(score);
   const info  = LEVEL_INFO[level];
   const type  = TYPE_INFO[r.type] ?? { icon: '❔', label: r.type };
   const place = places.find((p) => p.id === r.placeId);
   const waitMin = Math.max(0, Math.round((nowMs - r.receivedAt) / 60000));
 
+  // Datos incompletos (null)
+  const hasIncompleteData = r.people == null || r.vulnerable == null || r.access == null;
+
+  // Recurso sugerido más cercano y afín con detección de penalidad por ruta cortada
+  const suggestion = selected && resources ? findBestMatchingResource(r, resources, allReports) : null;
+
   /* ── 1. Acción: ASIGNAR ────────────────────────────────────────── */
   const handleAssignClick = (e) => {
     e.stopPropagation();
-    if (animPhase) return;
+    if (animPhase || !suggestion?.resource) return;
 
-    // A) Actualización instantánea del recurso en el panel inferior (al mismo tiempo)
-    onPreAssign?.(r.type);
+    const assignedRes = suggestion.resource;
 
-    // B) Flash y borde verde (ring-2 ring-green-500) por 1 segundo
+    onPreAssign?.(r, assignedRes);
     setAnimPhase('flash-assign');
 
-    // C) Transición de salida suave hacia la derecha
-    setTimeout(() => {
+    const t1 = setTimeout(() => {
       setAnimPhase('slide-out');
-    }, 700);
+    }, 350);
+    timersRef.current.push(t1);
 
-    // D) Finalizar y descontar de activos
-    setTimeout(() => {
+    const t2 = setTimeout(() => {
       if (onAssign) {
-        onAssign(r.id, r.type);
+        onAssign(r, assignedRes.id, suggestion);
       } else {
         onStatus(r.id, 'asignado');
       }
-    }, 1000);
+    }, 650);
+    timersRef.current.push(t2);
   };
 
   /* ── 2. Acción: ATENDIDO ───────────────────────────────────────── */
@@ -57,12 +76,9 @@ export default function PriorityCard({
     if (animPhase) return;
 
     setAnimPhase('flash-atendido');
-    setTimeout(() => {
-      setAnimPhase('slide-out');
-    }, 350);
-    setTimeout(() => {
-      onStatus(r.id, 'atendido');
-    }, 650);
+    const t1 = setTimeout(() => setAnimPhase('slide-out'), 350);
+    const t2 = setTimeout(() => onStatus(r.id, 'atendido'), 650);
+    timersRef.current.push(t1, t2);
   };
 
   /* ── 3. Acción: DESCARTAR ──────────────────────────────────────── */
@@ -71,12 +87,9 @@ export default function PriorityCard({
     if (animPhase) return;
 
     setAnimPhase('flash-descartado');
-    setTimeout(() => {
-      setAnimPhase('slide-out');
-    }, 250);
-    setTimeout(() => {
-      onStatus(r.id, 'descartado');
-    }, 550);
+    const t1 = setTimeout(() => setAnimPhase('slide-out'), 250);
+    const t2 = setTimeout(() => onStatus(r.id, 'descartado'), 550);
+    timersRef.current.push(t1, t2);
   };
 
   const isAssigning   = animPhase === 'flash-assign';
@@ -85,7 +98,6 @@ export default function PriorityCard({
   const isSlidingOut  = animPhase === 'slide-out';
   const isLocked      = Boolean(animPhase);
 
-  // Clases dinámicas para efectos visuales de video pitch
   let dynamicClasses = '';
   if (isAssigning) {
     dynamicClasses = 'ring-2 ring-green-500 border-green-500 bg-green-950/80 shadow-[0_0_24px_rgba(34,197,94,0.6)]';
@@ -99,6 +111,14 @@ export default function PriorityCard({
     ? 'translate-x-full opacity-0 pointer-events-none scale-95 duration-500'
     : 'translate-x-0 opacity-100 duration-300';
 
+  // Ícono y color de confianza de señal LoRa
+  const conf = r.confidence ?? 'media';
+  const confInfo = {
+    alta:  { icon: '📶', label: 'Alta',  cls: 'text-emerald-400' },
+    media: { icon: '📶', label: 'Media', cls: 'text-amber-400'   },
+    baja:  { icon: '📶', label: 'Baja',  cls: 'text-red-400'     },
+  }[conf] || { icon: '📶', label: conf, cls: 'text-slate-400' };
+
   return (
     <li
       className={[
@@ -109,11 +129,11 @@ export default function PriorityCard({
         isNew && !animPhase ? 'animate-report-new animate-slide-in' : '',
       ].filter(Boolean).join(' ')}
     >
-      {/* ── Fila principal: clic selecciona/deselecciona ─────────── */}
+      {/* ── Fila principal ───────────────────────────────────────── */}
       <button
         onClick={() => !isLocked && onSelect(selected ? null : r.id)}
         disabled={isLocked}
-        className="flex min-h-[52px] w-full items-center gap-3 px-3 py-2 text-left disabled:cursor-default"
+        className="flex min-h-[56px] w-full items-center gap-3 px-3 py-2 text-left disabled:cursor-default"
       >
         {/* Puntuación */}
         <span
@@ -123,28 +143,42 @@ export default function PriorityCard({
               : `${info.textCls} ${info.borderCls}`
           }`}
         >
-          {r.score}
+          {score}
         </span>
 
-        {/* Tipo + lugar */}
+        {/* Tipo + lugar + origen LoRa */}
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-100">
             <span>{type.icon}</span>
             <span className="truncate">{type.label}</span>
           </span>
-          <span className="block truncate text-xs text-slate-400">
+          <span className="block truncate text-xs text-slate-300">
             {place?.name ?? '— sin lugar registrado'}
+          </span>
+          {/* Metadata de Origen: vía Nodo y Confianza */}
+          <span className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+            <span>vía Nodo {r.nodeId ?? '01'}</span>
+            <span className="text-slate-600">·</span>
+            <span className={`flex items-center gap-0.5 font-medium ${confInfo.cls}`}>
+              <span>{confInfo.icon}</span>
+              <span>{confInfo.label}</span>
+            </span>
           </span>
         </span>
 
-        {/* Nivel + tiempo */}
-        <span className="shrink-0 text-right">
+        {/* Nivel + tiempo + chip incompleto */}
+        <span className="shrink-0 text-right flex flex-col items-end gap-1">
           <span className={`block text-xs font-bold tracking-widest ${isAssigning ? 'text-green-400' : info.textCls}`}>
             {isAssigning ? 'ASIGNADO' : `${info.letter} · ${info.label}`}
           </span>
           <span className="block font-mono text-xs text-slate-400">
             {waitMin} min
           </span>
+          {hasIncompleteData && (
+            <span className="bg-red-900/50 text-red-200 text-[9px] font-bold px-1.5 py-0.5 rounded border border-red-700/60 leading-none">
+              DATO INCOMPLETO
+            </span>
+          )}
         </span>
       </button>
 
@@ -167,21 +201,30 @@ export default function PriorityCard({
             {expanded ? '▲ Ocultar' : '▼ Por qué este score'}
           </button>
 
-          {/* Barras de factores */}
+          {/* Barras de factores adaptadas a los sliders */}
           {expanded && (
             <div className="space-y-1.5">
               {Object.entries(WHY_LABELS).map(([key, label]) => {
-                const val = r.why?.[key] ?? 0;
+                const baseVal = r.why?.[key] ?? 0;
+                const factorWeight = ((weights?.[key] ?? 100) / 100);
+                const displayVal = Math.round(baseVal * factorWeight);
                 return (
                   <div key={key}>
                     <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
                       <span>{label}</span>
-                      <span className="font-mono text-slate-300">{val}</span>
+                      <span className="font-mono text-slate-300">
+                        {displayVal}
+                        {factorWeight !== 1 && (
+                          <span className="text-sky-400 text-[9px] ml-1">
+                            ({Math.round(factorWeight * 100)}%)
+                          </span>
+                        )}
+                      </span>
                     </div>
                     <div className="h-1.5 rounded-full bg-slate-800">
                       <div
                         className="h-1.5 rounded-full bg-slate-300 transition-all duration-300"
-                        style={{ width: `${val}%` }}
+                        style={{ width: `${Math.min(100, displayVal)}%` }}
                       />
                     </div>
                   </div>
@@ -190,50 +233,69 @@ export default function PriorityCard({
             </div>
           )}
 
+          {/* Sugerencia táctica y ETA */}
+          <div className="rounded border border-sky-500/30 bg-sky-950/40 px-2.5 py-1.5 text-xs">
+            {suggestion ? (
+              <div>
+                <div className="flex items-center justify-between gap-1 flex-wrap">
+                  <span className="font-semibold text-sky-200">
+                    <span className="font-bold text-sky-400">SUGERIDO: </span>
+                    {suggestion.resource.agency} · {RESOURCE_INFO[suggestion.resource.type]?.label ?? suggestion.resource.type}
+                  </span>
+                  <span className="font-mono text-sky-300 font-bold">
+                    Llega en ~{suggestion.etaMin} min
+                  </span>
+                </div>
+                {/* Penalidad por ruta cortada activa en la trayectoria */}
+                {suggestion.adjustedByCutRoute && (
+                  <div className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-amber-300">
+                    <span>⚠️</span>
+                    <span>ETA ajustado por ruta cortada (+40%)</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <span className="font-semibold text-slate-400">
+                SIN RECURSOS DISPONIBLES
+              </span>
+            )}
+          </div>
+
           {/* Acciones principales */}
-          <div className="flex gap-1.5 pt-1">
-            {/* 1. Botón ASIGNAR */}
+          <div className="flex gap-1.5 pt-0.5">
             <button
               onClick={handleAssignClick}
-              disabled={isLocked}
+              disabled={isLocked || !suggestion}
               className={`min-h-[44px] flex-1 rounded-md text-xs font-bold transition-all duration-200 ${
                 isAssigning
                   ? 'bg-green-600 text-white shadow-[0_0_12px_rgba(34,197,94,0.8)]'
+                  : !suggestion
+                  ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
                   : 'bg-sky-700 text-white hover:bg-sky-600 active:scale-95'
               }`}
             >
               {isAssigning ? (
                 <span className="flex items-center justify-center gap-1.5">
                   <span className="h-2 w-2 rounded-full bg-white animate-ping" />
-                  ASIGNADO
+                  DESPACHANDO...
                 </span>
               ) : (
                 'ASIGNAR'
               )}
             </button>
 
-            {/* 2. Botón ATENDIDO */}
             <button
               onClick={handleAtendidoClick}
               disabled={isLocked}
-              className={`min-h-[44px] flex-1 rounded-md text-xs font-bold transition-all duration-200 ${
-                isAtendido
-                  ? 'bg-emerald-500 text-slate-950 font-black'
-                  : 'bg-emerald-700 text-white hover:bg-emerald-600 active:scale-95'
-              }`}
+              className="min-h-[44px] flex-1 rounded-md text-xs font-bold bg-emerald-700 text-white hover:bg-emerald-600 active:scale-95 transition-all duration-200"
             >
               {isAtendido ? '✓ ATENDIDO' : 'ATENDIDO'}
             </button>
 
-            {/* 3. Botón DESCARTAR */}
             <button
               onClick={handleDescartarClick}
               disabled={isLocked}
-              className={`min-h-[44px] flex-1 rounded-md border text-xs font-semibold transition-all duration-200 ${
-                isDescartado
-                  ? 'border-slate-500 bg-slate-700 text-slate-300'
-                  : 'border-slate-600 bg-slate-800 text-slate-300 hover:bg-slate-700 active:scale-95'
-              }`}
+              className="min-h-[44px] flex-1 rounded-md border border-slate-600 bg-slate-800 text-xs font-semibold text-slate-300 hover:bg-slate-700 active:scale-95 transition-all duration-200"
             >
               {isDescartado ? '✕ DESCARTADO' : 'DESCARTAR'}
             </button>

@@ -33,9 +33,9 @@ export const RESOURCE_INFO = {
 };
 
 export const RESOURCE_STATUS_INFO = {
-  disponible: { label: 'Disponible', cls: 'text-emerald-400 bg-emerald-950/60 border-emerald-700' },
-  asignado:   { label: 'Asignado',   cls: 'text-yellow-400  bg-yellow-950/60  border-yellow-700'  },
-  en_camino:  { label: 'En camino',  cls: 'text-sky-400     bg-sky-950/60     border-sky-700'     },
+  disponible: { label: 'Disponible', icon: '🟢', cls: 'text-emerald-400 bg-emerald-950/60 border-emerald-700' },
+  asignado:   { label: 'Asignado',   icon: '🟣', cls: 'text-purple-400  bg-purple-950/60  border-purple-600'  },
+  en_camino:  { label: 'En camino',  icon: '🔵', cls: 'text-sky-400     bg-sky-950/60     border-sky-700'     },
 };
 
 export const WHY_LABELS = {
