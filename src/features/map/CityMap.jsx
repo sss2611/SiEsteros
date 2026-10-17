@@ -1,228 +1,207 @@
 // src/features/map/CityMap.jsx
+// Mapa Leaflet con capa oscura de cuadrícula (sin tiles externos).
+// Soporta /public/tiles/{z}/{x}/{y}.png si existen; si no, usa la cuadrícula.
+
 import { useEffect, useRef } from 'react';
-import * as maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { Protocol } from 'pmtiles';
-import { layers, namedFlavor } from '@protomaps/basemaps';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { getLevel, LEVEL_INFO, TYPE_INFO, KIND_ICON } from '../../shared/constants.js';
 
-// Estilo del mapa: 'light' se parece a Google Maps. Para uno oscuro, cambiar a 'dark'.
-const FLAVOR = 'light';
+const CENTER = [-27.7900, -64.2600];
 
-// Los colores de prioridad NO cambian con la paleta
-const LEVEL_COLOR = {
-  critica: '#ef4444',
-  alta: '#f97316',
-  media: '#facc15',
-  baja: '#94a3b8',
-};
+/* ── Capa de cuadrícula oscura (tipo radar, sin requests externos) ─── */
+const DarkGridLayer = L.GridLayer.extend({
+  createTile() {
+    const size = this.getTileSize();
+    const canvas = document.createElement('canvas');
+    canvas.width  = size.x;
+    canvas.height = size.y;
+    const ctx = canvas.getContext('2d');
 
-const CENTER = [-64.24, -27.8];
-const BOUNDS = [
-  [-64.36, -27.9],
-  [-64.12, -27.7],
-];
+    // Fondo oscuro
+    ctx.fillStyle = '#0c1b2e';
+    ctx.fillRect(0, 0, size.x, size.y);
 
-// Registra una sola vez el lector de archivos .pmtiles
-let protocolReady = false;
-function ensureProtocol() {
-  if (protocolReady) return;
-  maplibregl.setWorkerUrl(workerUrl);
-  const protocol = new Protocol();
-  maplibregl.addProtocol('pmtiles', protocol.tile);
-  protocolReady = true;
+    // Cuadrícula menor
+    ctx.strokeStyle = 'rgba(60,100,70,0.18)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= size.x; i += 32) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, size.y); ctx.stroke();
+    }
+    for (let i = 0; i <= size.y; i += 32) {
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(size.x, i); ctx.stroke();
+    }
+
+    // Cuadrícula mayor (cada 5 celdas)
+    ctx.strokeStyle = 'rgba(70,120,80,0.35)';
+    ctx.lineWidth = 0.7;
+    for (let i = 0; i <= size.x; i += 160) {
+      ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, size.y); ctx.stroke();
+    }
+    for (let i = 0; i <= size.y; i += 160) {
+      ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(size.x, i); ctx.stroke();
+    }
+
+    return canvas;
+  },
+});
+
+/* ── Construcción de pin SVG ─────────────────────────────────────── */
+function makePinIcon(level, selected) {
+  const info = LEVEL_INFO[level];
+  const fill   = info.pinFill;
+  const letter = info.letter;
+  const sc = selected ? 1.28 : 1.0;
+  const w  = Math.round(32 * sc);
+  const h  = Math.round(40 * sc);
+  const pulse = level === 'critica'
+    ? 'style="animation:pin-pulse 1s ease-in-out infinite;transform-origin:50% 100%"'
+    : '';
+
+  const html = `<div ${pulse} style="width:${w}px;height:${h}px">
+    <svg width="${w}" height="${h}" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 1C8.3 1 2 7.3 2 15C2 25.3 16 39 16 39S30 25.3 30 15C30 7.3 23.7 1 16 1Z"
+            fill="${fill}" stroke="rgba(0,0,0,0.45)" stroke-width="1.5"/>
+      <circle cx="16" cy="15" r="8.5" fill="rgba(0,0,0,0.32)"/>
+      <text x="16" y="19.2" text-anchor="middle" font-size="9.5" font-weight="700"
+            font-family="ui-monospace,monospace,sans-serif" fill="white">${letter}</text>
+    </svg>
+  </div>`;
+
+  return L.divIcon({ html, iconSize: [w, h], iconAnchor: [w / 2, h], className: '' });
 }
 
-function buildStyle() {
-  return {
-    version: 8,
-    glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
-    sprite: `https://protomaps.github.io/basemaps-assets/sprites/v4/${FLAVOR}`,
-    sources: {
-      protomaps: {
-        type: 'vector',
-        url: `pmtiles://${window.location.origin}/maps/santiago.pmtiles`,
-        attribution:
-          '<a href="https://protomaps.com" target="_blank">Protomaps</a> © <a href="https://openstreetmap.org" target="_blank">OpenStreetMap</a>',
-      },
-    },
-    layers: layers('protomaps', namedFlavor(FLAVOR), { lang: 'es' }),
-  };
+/* ── Icono de lugar ──────────────────────────────────────────────── */
+function makePlaceIcon(kind) {
+  const icon = KIND_ICON[kind] ?? '📍';
+  const html = `<div style="width:22px;height:22px;border-radius:50%;
+    background:#1e3a5f;border:1px solid #2563eb;display:flex;
+    align-items:center;justify-content:center;font-size:12px;
+    line-height:1;box-shadow:0 1px 4px rgba(0,0,0,0.6)">${icon}</div>`;
+  return L.divIcon({ html, iconSize: [22, 22], iconAnchor: [11, 11], className: '' });
 }
 
-// Mancha de agua con contorno irregular (determinista: siempre la misma forma)
-function floodPolygon(place, index) {
-  const km = 0.45 + (place.vecesAfectado ?? 0) * 0.2;
-  const p1 = index * 1.7 + 0.5;
-  const p2 = index * 2.3 + 1.1;
-  const p3 = index * 0.9 + 2.0;
-  const N = 40;
-  const pts = [];
-  for (let i = 0; i <= N; i++) {
-    const a = ((i % N) / N) * Math.PI * 2;
-    const k =
-      1 + 0.18 * Math.sin(2 * a + p1) + 0.12 * Math.sin(3 * a + p2) + 0.08 * Math.sin(5 * a + p3);
-    pts.push([place.lng + (Math.cos(a) * km * k) / 98, place.lat + (Math.sin(a) * km * k) / 111]);
-  }
-  return {
-    type: 'Feature',
-    properties: { id: place.id },
-    geometry: { type: 'Polygon', coordinates: [pts] },
-  };
-}
-
-// Si varios reportes caen en el mismo punto, los abre en espiral para que no se tapen
-function spread(lng, lat, k) {
-  if (k === 0) return [lng, lat];
+/* ── Offset espiral para pines superpuestos ──────────────────────── */
+function spread(lat, lng, k) {
+  if (k === 0) return [lat, lng];
   const ang = k * 2.4;
-  const r = 0.00045 * Math.sqrt(k);
-  return [lng + Math.cos(ang) * r, lat + Math.sin(ang) * r];
+  const r = 0.0003; // ~30 m
+  return [lat + Math.cos(ang) * r, lng + Math.sin(ang) * r];
 }
 
-// Dibuja la chinche (SVG) solo si cambió algo, para que no parpadee
-function paintPin(el, r, selected) {
-  const sig = `${r.score}|${r.level}|${selected}`;
-  if (el.dataset.sig === sig) return;
-  el.dataset.sig = sig;
-  const color = LEVEL_COLOR[r.level];
-  const critical = r.level === 'critica';
-  el.style.zIndex = selected ? '20' : critical ? '10' : '1';
-  el.innerHTML = `
-    <div style="position:relative;width:32px;height:42px;transform:scale(${selected ? 1.3 : 1});transform-origin:50% 100%;transition:transform .2s;">
-      ${
-        critical
-          ? `<span class="animate-ping" style="position:absolute;left:4px;top:3.5px;width:24px;height:24px;border-radius:9999px;background:${color};opacity:.45"></span>`
-          : ''
-      }
-      <svg width="32" height="42" viewBox="0 0 32 42" style="position:absolute;inset:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))">
-        <path d="M16 1C8 1 1.5 7.4 1.5 15.3c0 10.6 14.5 25.7 14.5 25.7s14.5-15.1 14.5-25.7C30.5 7.4 24 1 16 1z" fill="${color}" stroke="#0a0a0b" stroke-width="1.5"/>
-        <circle cx="16" cy="15.5" r="9" fill="#ffffff"/>
-        <text x="16" y="19" text-anchor="middle" font-size="10" font-weight="700" font-family="ui-monospace,monospace" fill="#0a0a0b">${r.score}</text>
-      </svg>
-    </div>`;
-}
-
+/* ── Componente ──────────────────────────────────────────────────── */
 export default function CityMap({ reports, places, selectedId, onSelect }) {
-  const box = useRef(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef(new Map());
-  const onSelectRef = useRef(onSelect);
-  const reportsRef = useRef(reports);
+  const containerRef  = useRef(null);
+  const mapRef        = useRef(null);
+  const markersRef    = useRef(new Map()); // id → { marker, el }
+  const placeMarkers  = useRef([]);
+  const onSelectRef   = useRef(onSelect);
 
-  // Mantiene al día lo último recibido, sin recrear el mapa
-  useEffect(() => {
-    onSelectRef.current = onSelect;
-    reportsRef.current = reports;
-  });
+  useEffect(() => { onSelectRef.current = onSelect; });
 
-  // Crea el mapa una sola vez
+  /* Inicializar mapa una sola vez */
   useEffect(() => {
-    ensureProtocol();
-    const markers = markersRef.current;
-    const map = new maplibregl.Map({
-      container: box.current,
-      style: buildStyle(),
+    if (mapRef.current) return;
+
+    const map = L.map(containerRef.current, {
       center: CENTER,
-      zoom: 12.2,
-      minZoom: 10,
-      maxZoom: 17.5,
-      maxBounds: BOUNDS,
+      zoom: 14,
+      zoomControl: true,
+      attributionControl: false,
     });
+
     mapRef.current = map;
 
-    map.on('load', () => {
-      const flood = {
-        type: 'FeatureCollection',
-        features: places.filter((p) => p.inundable).map((p, i) => floodPolygon(p, i)),
-      };
-      // Debajo de los textos del mapa, pero encima de calles y manzanas
-      const firstSymbol = map.getStyle().layers.find((l) => l.type === 'symbol')?.id;
-      map.addSource('flood', { type: 'geojson', data: flood });
-      map.addLayer(
-        {
-          id: 'flood-fill',
-          type: 'fill',
-          source: 'flood',
-          paint: { 'fill-color': '#3b82a6', 'fill-opacity': 0.35 },
-        },
-        firstSymbol
-      );
-      map.addLayer(
-        {
-          id: 'flood-line',
-          type: 'line',
-          source: 'flood',
-          paint: { 'line-color': '#2b6a8c', 'line-width': 1.5 },
-        },
-        firstSymbol
-      );
-    });
+    // Intentar cargar tiles locales; si fallan, usar cuadrícula
+    const tileUrl = '/tiles/{z}/{x}/{y}.png';
+    const testImg = new Image();
+    testImg.onload = () => {
+      L.tileLayer(tileUrl, { maxZoom: 18, minZoom: 10 }).addTo(map);
+    };
+    testImg.onerror = () => {
+      new DarkGridLayer({ maxZoom: 18, minZoom: 10 }).addTo(map);
+    };
+    testImg.src = '/tiles/14/5424/9689.png'; // tile aproximado para Santiago
 
-    // Tocar el fondo del mapa deselecciona
+    // Clic en fondo del mapa → deseleccionar
     map.on('click', () => onSelectRef.current(null));
 
+    // Marcadores de lugares
+    places.forEach((pl) => {
+      const m = L.marker([pl.lat, pl.lng], { icon: makePlaceIcon(pl.kind) })
+        .bindTooltip(pl.name, { direction: 'top', className: 'posta-tooltip' })
+        .addTo(map);
+      placeMarkers.current.push(m);
+    });
+
     return () => {
-      markers.clear();
       map.remove();
       mapRef.current = null;
+      markersRef.current.clear();
+      placeMarkers.current = [];
     };
-  }, [places]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Chinches: crea, mueve y borra según los reportes
+  /* Actualizar pines de reportes */
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+
     const markers = markersRef.current;
     const live = new Set();
-    const groups = new Map();
+
+    // Contar cuántos reportes comparten la misma coordenada (para offset espiral)
+    const coordCount = new Map();
+    reports.forEach((r) => {
+      const key = `${r.lat.toFixed(5)},${r.lng.toFixed(5)}`;
+      coordCount.set(key, (coordCount.get(key) ?? 0) + 1);
+    });
+    const coordIdx = new Map();
 
     reports.forEach((r) => {
       live.add(r.id);
-      const key = `${r.lat},${r.lng}`;
-      const k = groups.get(key) ?? 0;
-      groups.set(key, k + 1);
-      const [lng, lat] = spread(r.lng, r.lat, k);
+      const level    = getLevel(r.score);
+      const selected = r.id === selectedId;
 
-      let m = markers.get(r.id);
-      if (!m) {
-        const el = document.createElement('div');
-        el.style.cursor = 'pointer';
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          onSelectRef.current(r.id);
-        });
-        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-          .setLngLat([lng, lat])
+      const key = `${r.lat.toFixed(5)},${r.lng.toFixed(5)}`;
+      const k   = coordIdx.get(key) ?? 0;
+      coordIdx.set(key, k + 1);
+      const [lat, lng] = spread(r.lat, r.lng, k);
+
+      const icon = makePinIcon(level, selected);
+
+      if (!markers.has(r.id)) {
+        const marker = L.marker([lat, lng], { icon, zIndexOffset: selected ? 1000 : level === 'critica' ? 500 : 0 })
           .addTo(map);
-        m = { marker, el };
-        markers.set(r.id, m);
+        marker.on('click', (e) => { L.DomEvent.stopPropagation(e); onSelectRef.current(r.id); });
+        markers.set(r.id, marker);
       } else {
-        m.marker.setLngLat([lng, lat]);
+        const marker = markers.get(r.id);
+        marker.setIcon(icon);
+        marker.setLatLng([lat, lng]);
+        marker.setZIndexOffset(selected ? 1000 : level === 'critica' ? 500 : 0);
       }
-      paintPin(m.el, r, r.id === selectedId);
     });
 
-    for (const [id, m] of markers) {
+    // Eliminar marcadores de reportes que ya no están
+    for (const [id, marker] of markers) {
       if (!live.has(id)) {
-        m.marker.remove();
+        marker.remove();
         markers.delete(id);
       }
     }
   }, [reports, selectedId]);
 
-  // Vuela hacia el caso elegido
+  /* Volar hacia el reporte seleccionado */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedId) return;
-    const r = reportsRef.current.find((x) => x.id === selectedId);
+    const r = reports.find((x) => x.id === selectedId);
     if (!r) return;
-    map.flyTo({
-      center: [r.lng, r.lat],
-      zoom: Math.max(map.getZoom(), 15),
-      speed: 0.9,
-      essential: true,
-    });
+    map.flyTo([r.lat, r.lng], Math.max(map.getZoom(), 15), { duration: 0.8 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
-  return <div ref={box} style={{ position: 'absolute', inset: 0 }} />;
+  return <div ref={containerRef} className="absolute inset-0" />;
 }
